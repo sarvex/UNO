@@ -11,12 +11,12 @@ class Bot:
             uno_path = project_path + "\\build\\src\\Debug\\uno.exe"
         else:
             # unix
-            uno_path = project_path + "/build/src/uno"
+            uno_path = f"{project_path}/build/src/uno"
         args = [uno_path, "-c", endpoint, "-u", username]
-        
+
         self.game = Popen(args, stdin=PIPE, stdout=PIPE)
         self.player_num = player_num
-        
+
         self.last_played_card = None
         self.handcards = []
         self.cursor_index = 0
@@ -81,25 +81,27 @@ class Bot:
             self.single_loop()
 
     def try_play_card(self):
-        # press keyboard only once for each frame
-        index_of_card_to_play = -1
-        for i in range(len(self.handcards)):
-            if util.can_be_played_after(self.handcards[i], self.last_played_card, len(self.handcards)):
-                index_of_card_to_play = i
-                break
+        index_of_card_to_play = next(
+            (
+                i
+                for i in range(len(self.handcards))
+                if util.can_be_played_after(
+                    self.handcards[i], self.last_played_card, len(self.handcards)
+                )
+            ),
+            -1,
+        )
         if self.debug:
             print("index of card to play:", index_of_card_to_play, "\tcursor index:", self.cursor_index)
         if index_of_card_to_play == -1:
             # no card can be played
             self.press_keyboard(' ')
+        elif index_of_card_to_play < self.cursor_index:
+            self.press_keyboard(',')
+        elif index_of_card_to_play > self.cursor_index:
+            self.press_keyboard('.')
         else:
-            # there is a card to play
-            if index_of_card_to_play < self.cursor_index:
-                self.press_keyboard(',')
-            elif index_of_card_to_play > self.cursor_index:
-                self.press_keyboard('.')
-            else:
-                self.press_keyboard('\n')
+            self.press_keyboard('\n')
     
     def try_play_card_immediately(self):
         card_to_play = self.handcards[self.cursor_index]
@@ -118,9 +120,6 @@ class Bot:
 if __name__ == "__main__":
     endpoint = sys.argv[1]
     player_num = int(sys.argv[2])
-    if len(sys.argv) > 3:
-        username = sys.argv[3]
-    else:
-        username = "bot"
+    username = sys.argv[3] if len(sys.argv) > 3 else "bot"
     bot = Bot(endpoint, player_num=player_num, username=username, debug=True)
     bot.game_loop()

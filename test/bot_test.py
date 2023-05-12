@@ -2,13 +2,10 @@ import os, sys, time
 from subprocess import Popen, PIPE
 
 proj_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(proj_dir + "/bot")
+sys.path.append(f"{proj_dir}/bot")
 from bot import Bot
 
-player_num = 2
-if len(sys.argv) > 1:
-    player_num = int(sys.argv[1])
-
+player_num = int(sys.argv[1]) if len(sys.argv) > 1 else 2
 start_time = time.time()
 
 if os.name == 'nt':
@@ -16,7 +13,7 @@ if os.name == 'nt':
     uno_path = proj_dir + "\\build\\src\\Debug\\uno.exe"
 else:
     # unix
-    uno_path = proj_dir + "/build/src/uno"
+    uno_path = f"{proj_dir}/build/src/uno"
 
 server = Popen([uno_path, "-l", "9091", "-n", str(player_num)], stdout=PIPE)
 time.sleep(0.2)
@@ -24,20 +21,15 @@ time.sleep(0.2)
 bots = []
 
 for i in range(player_num):
-    _username = "bot" + str(i)
+    _username = f"bot{str(i)}"
     bots.append(Bot("localhost:9091", username=_username, player_num=player_num, debug=True))
     time.sleep(0.2)
 
 for i in range(player_num):
-    for j in range(player_num - i + 1):
+    for _ in range(player_num - i + 1):
         bots[i].single_loop()
 
-cur_player = -1
-
-for i in range(player_num):
-    if bots[i].hint_stat == 1:
-        cur_player = i
-        break
+cur_player = next((i for i in range(player_num) if bots[i].hint_stat == 1), -1)
 assert cur_player != -1
 
 def wrap_with(num_to_wrap, wrap_range):
@@ -90,8 +82,7 @@ while True:
                     bots[i].single_loop()
                     if bots[i].hint_stat == 4:
                         test_end()
-                    assert bots[i].last_played_card == old_last_played_card \
-                        or bots[i].last_played_card == last_played_card
+                    assert bots[i].last_played_card in [old_last_played_card, last_played_card]
                     if bots[i].last_played_card == last_played_card:
                         break
                 print("bots", i, "last_played_card", bots[i].last_played_card)

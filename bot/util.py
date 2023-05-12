@@ -15,11 +15,7 @@ def remove_escape(s):
             .replace("\x1b[0m", "") 
 
 def is_special_card(card):
-    if card in ['W', '+4']:
-        return True
-    if card[1:] in ['S', 'R', '+2']:
-        return True
-    return False
+    return True if card in ['W', '+4'] else card[1:] in ['S', 'R', '+2']
 
 def can_be_played_after(card_to_play, last_played_card, handcards_num):
     _card_to_play = remove_escape(card_to_play)
@@ -65,7 +61,7 @@ def next_frame(game, player_num, debug=False):
     _pos_of_my_box = conf.pos_of_player_box[player_num][0]
 
     while True:
-        line = game.stdout.readline().decode("UTF-8").replace("\n", "") 
+        line = game.stdout.readline().decode("UTF-8").replace("\n", "")
         if debug:
             print(cur_line_num, "\t", line)
         else:
@@ -76,11 +72,12 @@ def next_frame(game, player_num, debug=False):
             stat = 4
             return stat, last_played_card, handcards, cursor_index
 
-        if cur_line_num == _pos_of_last_played_card[0]:
-            # last played card
-            if len(line[_pos_of_last_played_card[1]:].split()) > 0:
-                last_played_card = line[_pos_of_last_played_card[1]:].split()[0].strip()
-        
+        if (
+            cur_line_num == _pos_of_last_played_card[0]
+            and len(line[_pos_of_last_played_card[1] :].split()) > 0
+        ):
+            last_played_card = line[_pos_of_last_played_card[1]:].split()[0].strip()
+
         if cur_line_num == _pos_of_my_box[0] + 3:
             # handcards
             is_updating_handcards = True
@@ -93,11 +90,13 @@ def next_frame(game, player_num, debug=False):
                 if _cursor_index > -1:
                     cursor_index = _cursor_index + 8 * (cur_line_num - _pos_of_my_box[0] - 3)
 
-        if cur_line_num == get_ui_line_nums(player_num, len(handcards)) - 1:
-            if line[_pos_of_my_box[1]] != '[':
-                # it's not my turn
-                stat = 0
-                return stat, last_played_card, handcards, cursor_index
+        if (
+            cur_line_num == get_ui_line_nums(player_num, len(handcards)) - 1
+            and line[_pos_of_my_box[1]] != '['
+        ):
+            # it's not my turn
+            stat = 0
+            return stat, last_played_card, handcards, cursor_index
 
         if cur_line_num == get_ui_line_nums(player_num, len(handcards)):
             if re.match("Now it's your turn", line):
@@ -111,7 +110,7 @@ def next_frame(game, player_num, debug=False):
                 stat = 3
             else:
                 assert False
-        
+
         lines_left_num -= 1
         if lines_left_num == 0:
             return stat, last_played_card, handcards, cursor_index
